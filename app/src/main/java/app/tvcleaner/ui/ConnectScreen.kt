@@ -41,6 +41,16 @@ fun ConnectScreen(s: UiState, vm: MainViewModel, modifier: Modifier = Modifier, 
                 key = "start",
             )
             AppCard {
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = androidx.compose.ui.Alignment.CenterVertically) {
+                    Tag("BETA", Ui.warn)
+                    Text("Проверено не на всех ТВ", color = Ui.text, style = MaterialTheme.typography.titleSmall)
+                }
+                Text(
+                    "Любое изменение можно откатить во вкладке «Бэкапы». Начни с «Мусора» и перезагрузи ТВ после чистки.",
+                    color = Ui.muted, style = MaterialTheme.typography.bodySmall,
+                )
+            }
+            AppCard {
                 Text("Подготовка ТВ — один раз", color = Ui.text, style = MaterialTheme.typography.titleSmall)
                 Spacer(Modifier.height(4.dp))
                 StepRow(1, "Настройки → Устройство → О приложении, 7 раз нажми «Сборка»")

@@ -5,25 +5,37 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.unit.dp
 import app.tvcleaner.MainViewModel
 import app.tvcleaner.UiState
+
+private data class Suggested(val name: String, val about: String, val url: String)
+
+private val suggested = listOf(
+    Suggested("FLauncher", "Простой и лёгкий, открытый код. Хороший первый выбор.", "https://github.com/svrooij/flauncher/releases"),
+    Suggested("FLauncher (форк osrosal)", "Тот же FLauncher, обновляется активнее.", "https://github.com/osrosal/FLauncher/releases"),
+    Suggested("LTvLauncher", "Минималистичный, мало ест памяти.", "https://github.com/LeanBitLab/LtvLauncher/releases"),
+)
 
 @Composable
 fun LauncherScreen(s: UiState, vm: MainViewModel, modifier: Modifier = Modifier) {
     if (!s.connected) {
         Column(modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
-            Header("Лаунчер", "Свой главный экран для ТВ")
+            Header("Лаунчер", "Главный экран ТВ")
             EmptyState("Нет подключения", "Сначала подключись к ТВ на вкладке «ТВ».")
         }
         return
     }
-    val pickApk = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
-        if (uri != null) vm.installLauncher(uri)
+    val uri = LocalUriHandler.current
+    val pickApk = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { u ->
+        if (u != null) vm.installLauncher(u)
     }
 
     Column(
@@ -32,31 +44,47 @@ fun LauncherScreen(s: UiState, vm: MainViewModel, modifier: Modifier = Modifier)
     ) {
         Header(
             "Лаунчер",
-            "Лёгкий главный экран вместо тормозного",
-            "Родной главный экран — часто самое тяжёлое на ТВ. Родной лаунчер не удаляется: " +
-                "кнопка «Вернуть прежний» всегда доступна. На некоторых ТВ кнопка «Домой» на пульте " +
-                "может всё равно открывать фирменный экран — это ограничение прошивки.",
+            "Главный экран ТВ: тот, что с иконками приложений",
+            "Лаунчер — это программа, которая показывает главный экран. Родной на многих ТВ тяжёлый и тормозит. " +
+                "Лёгкий лаунчер работает быстрее. Родной не удаляется, его можно вернуть одной кнопкой. " +
+                "Этот раздел необязателен: чистка работает и без него.",
         )
+
         AppCard {
-            Text("Как поставить", color = Ui.text, style = androidx.compose.material3.MaterialTheme.typography.titleSmall)
+            Text("Как сменить за 3 шага", color = Ui.text, style = MaterialTheme.typography.titleSmall)
             Spacer(Modifier.height(4.dp))
-            StepRow(1, "Скачай APK лёгкого лаунчера на телефон")
-            StepRow(2, "Нажми «Установить APK» и выбери файл")
-            StepRow(3, "Выбери лаунчер в списке и нажми «Сделать основным»")
+            StepRow(1, "Скачай на телефон APK лёгкого лаунчера")
+            StepRow(2, "Нажми «Установить на ТВ» и выбери этот файл")
+            StepRow(3, "В списке ниже нажми «Сделать основным» и затем «Домой» на пульте")
         }
+
+        Text("1 · Выбери и скачай лаунчер", color = Ui.text, style = MaterialTheme.typography.titleMedium)
+        suggested.forEach { l ->
+            AppCard {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                        Text(l.name, color = Ui.text, style = MaterialTheme.typography.titleSmall)
+                        Text(l.about, color = Ui.muted, style = MaterialTheme.typography.bodySmall)
+                    }
+                    GhostButton("Открыть", { uri.openUri(l.url) })
+                }
+            }
+        }
+        Text(
+            "На странице листай вниз до Assets и скачивай файл с расширением .apk.",
+            color = Ui.muted, style = MaterialTheme.typography.bodySmall,
+        )
         PrimaryButton(
-            "Установить APK с телефона",
+            "2 · Установить на ТВ",
             { pickApk.launch(arrayOf("application/vnd.android.package-archive", "application/octet-stream")) },
             Modifier.fillMaxWidth(), enabled = s.busy == null,
         )
 
         Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceBetween) {
-            Text("Лаунчеры на ТВ", color = Ui.text, style = androidx.compose.material3.MaterialTheme.typography.titleMedium)
-            GhostButton("Обновить", vm::refreshLaunchers, enabled = s.busy == null)
+            Text("3 · Лаунчеры на ТВ", color = Ui.text, style = MaterialTheme.typography.titleMedium)
+            TextButton(onClick = vm::refreshLaunchers, enabled = s.busy == null) { Text("Обновить", color = Ui.accent) }
         }
-        if (s.launchers.isEmpty()) {
-            Text("Список пуст. Нажми «Обновить».", color = Ui.muted)
-        }
+        if (s.launchers.isEmpty()) Text("Список пуст. Нажми «Обновить».", color = Ui.muted)
         s.launchers.forEach { l ->
             AppCard {
                 Row(verticalAlignment = Alignment.CenterVertically) {
@@ -73,8 +101,11 @@ fun LauncherScreen(s: UiState, vm: MainViewModel, modifier: Modifier = Modifier)
 
         if (s.prevLauncher != null) {
             GhostButton("Вернуть прежний лаунчер", vm::restorePrevLauncher, Modifier.fillMaxWidth(), enabled = s.busy == null)
-            Text("Прежний: ${s.prevLauncher}", color = Ui.muted, style = androidx.compose.material3.MaterialTheme.typography.bodySmall)
         }
+        Text(
+            "Если после выбора «Домой» всё равно открывает старый экран — на этом ТВ прошивка не даёт сменить лаунчер так. Ничего не сломано.",
+            color = Ui.muted, style = MaterialTheme.typography.bodySmall,
+        )
         Spacer(Modifier.height(72.dp))
     }
 }
