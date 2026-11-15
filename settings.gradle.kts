@@ -14,3 +14,4 @@ dependencyResolutionManagement {
 }
 rootProject.name = "TvCleaner"
 include(":app")
+include(":desktop")

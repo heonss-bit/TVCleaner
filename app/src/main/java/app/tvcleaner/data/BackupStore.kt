@@ -5,27 +5,6 @@ import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
 import java.io.File
 
-/** kind: "removed" — удалено для пользователя 0, "disabled" — отключено */
-@Serializable
-data class BackupAction(
-    val pkg: String,
-    val title: String,
-    val kind: String,
-    /** Имена вытянутых с ТВ APK (только для не-системных приложений) */
-    val apkFiles: List<String> = emptyList(),
-)
-
-@Serializable
-data class BackupRecord(
-    val id: String,
-    val createdAt: Long,
-    val device: String,
-    val actions: List<BackupAction> = emptyList(),
-    /** Прежние значения настроек (settings global). null = ключа не было, при откате удаляем */
-    val settings: Map<String, String?> = emptyMap(),
-    val restored: Boolean = false,
-)
-
 class BackupStore(ctx: Context) {
     private val dir = File(ctx.filesDir, "backups").apply { mkdirs() }
     val apkDir = File(dir, "apks").apply { mkdirs() }

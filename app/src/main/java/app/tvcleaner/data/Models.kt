@@ -56,3 +56,24 @@ data class LauncherInfo(
     val component: String,
     val isDefault: Boolean,
 )
+
+/** kind: "removed" — удалено для пользователя 0, "disabled" — отключено */
+@Serializable
+data class BackupAction(
+    val pkg: String,
+    val title: String,
+    val kind: String,
+    /** Имена вытянутых с ТВ APK (только для не-системных приложений) */
+    val apkFiles: List<String> = emptyList(),
+)
+
+@Serializable
+data class BackupRecord(
+    val id: String,
+    val createdAt: Long,
+    val device: String,
+    val actions: List<BackupAction> = emptyList(),
+    /** Прежние значения настроек (settings global). null = ключа не было, при откате удаляем */
+    val settings: Map<String, String?> = emptyMap(),
+    val restored: Boolean = false,
+)
