@@ -1,19 +1,10 @@
 package app.tvcleaner.ui
 
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.AssistChip
-import androidx.compose.material3.Button
-import androidx.compose.material3.Card
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
-import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.Text
+import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
@@ -21,48 +12,75 @@ import app.tvcleaner.MainViewModel
 import app.tvcleaner.UiState
 
 @Composable
-fun ConnectScreen(s: UiState, vm: MainViewModel, modifier: Modifier = Modifier) {
+fun ConnectScreen(s: UiState, vm: MainViewModel, modifier: Modifier = Modifier, onGo: (Int) -> Unit = {}) {
     Column(
-        modifier.verticalScroll(rememberScrollState()).padding(16.dp),
-        verticalArrangement = Arrangement.spacedBy(12.dp),
+        modifier.verticalScroll(rememberScrollState()).padding(horizontal = 16.dp, vertical = 12.dp),
+        verticalArrangement = Arrangement.spacedBy(14.dp),
     ) {
         if (s.connected && s.device != null) {
-            Card(Modifier.fillMaxWidth()) {
-                Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                    Text("Подключено", style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.primary)
-                    Text(s.device.name, style = MaterialTheme.typography.titleLarge)
-                    Text("Android ${s.device.androidRelease} (API ${s.device.sdk})")
-                    s.device.freeStorageMb?.let { Text("Свободно места: $it МБ") }
-                    s.device.freeRamMb?.let { Text("Свободно RAM: $it МБ") }
-                }
-            }
-            OutlinedButton(onClick = vm::disconnect, modifier = Modifier.fillMaxWidth()) { Text("Отключиться") }
-            InfoCard("Дальше", "Вкладка «Чистка» — скан и очистка. «Лаунчер» — смена главного экрана. «Бэкапы» — откат изменений.")
-        } else {
-            InfoCard(
-                "Один раз включи отладку на ТВ",
-                "1. Настройки → Устройство → О приложении → 7 раз нажми на «Сборка».\n" +
-                    "2. Настройки → Устройство → Для разработчиков → включи «Отладка по USB» и «Отладка по сети» (или «Беспроводная отладка»).\n" +
-                    "3. IP-адрес ТВ смотри в Настройки → Сеть. Телефон должен быть в той же Wi-Fi.\n" +
-                    "4. При первом подключении на ТВ появится запрос — выбери «Всегда разрешать» и нажми ОК.",
+            Header(
+                "Подключено",
+                s.device.name,
+                "Связь с ТВ работает. Дальше открой «Чистка» и нажми «Просканировать». Телефон и ТВ должны оставаться в одной Wi-Fi.",
+                key = "connected",
             )
+            Row(horizontalArrangement = Arrangement.spacedBy(10.dp), modifier = Modifier.fillMaxWidth()) {
+                Stat("Android", s.device.androidRelease.ifBlank { "?" }, Modifier.weight(1f))
+                Stat("Свободно места", s.device.freeStorageMb?.let { "$it МБ" } ?: "—", Modifier.weight(1f))
+                Stat("Свободно RAM", s.device.freeRamMb?.let { "$it МБ" } ?: "—", Modifier.weight(1f))
+            }
+            PrimaryButton("Перейти к чистке", { onGo(1) }, Modifier.fillMaxWidth())
+            GhostButton("Сменить лаунчер", { onGo(2) }, Modifier.fillMaxWidth())
+            GhostButton("Отключиться", vm::disconnect, Modifier.fillMaxWidth())
+        } else {
+            Header(
+                "TV Cleaner",
+                "Чистка Android TV с телефона",
+                "Приложение подключается к ТВ по Wi-Fi (ADB). Ничего не нужно ставить на сам ТВ и не нужен компьютер. " +
+                    "Пока ты не нажал «Применить», ничего не удаляется.",
+                key = "start",
+            )
+            AppCard {
+                Text("Подготовка ТВ — один раз", color = Ui.text, style = MaterialTheme.typography.titleSmall)
+                Spacer(Modifier.height(4.dp))
+                StepRow(1, "Настройки → Устройство → О приложении, 7 раз нажми «Сборка»")
+                StepRow(2, "Для разработчиков → включи «Отладка по сети»")
+                StepRow(3, "Телефон и ТВ — в одной Wi-Fi")
+                StepRow(4, "На ТВ разреши запрос: «Всегда разрешать» → ОК")
+            }
             OutlinedTextField(
                 value = s.host,
                 onValueChange = vm::setHost,
-                label = { Text("IP-адрес ТВ (например 192.168.1.50)") },
+                label = { Text("IP-адрес ТВ, например 192.168.1.50") },
                 singleLine = true,
+                shape = RoundedCornerShape(16.dp),
+                colors = OutlinedTextFieldDefaults.colors(
+                    focusedBorderColor = Ui.accent,
+                    unfocusedBorderColor = Ui.line,
+                    focusedLabelColor = Ui.accent,
+                    unfocusedLabelColor = Ui.muted,
+                    cursorColor = Ui.accent,
+                    focusedTextColor = Ui.text,
+                    unfocusedTextColor = Ui.text,
+                ),
                 modifier = Modifier.fillMaxWidth(),
             )
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
-                OutlinedButton(onClick = vm::findTv, enabled = s.busy == null) { Text("Найти ТВ в сети") }
-                Button(onClick = vm::connect, enabled = s.busy == null) { Text("Подключиться") }
-            }
             if (s.found.isNotEmpty()) {
-                Text("Найдено в сети:", style = MaterialTheme.typography.labelLarge)
+                Text("Найдено в сети — нажми, чтобы выбрать", color = Ui.muted, style = MaterialTheme.typography.labelMedium)
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    s.found.forEach { ip -> AssistChip(onClick = { vm.setHost(ip) }, label = { Text(ip) }) }
+                    s.found.forEach { ip ->
+                        AssistChip(
+                            onClick = { vm.setHost(ip) },
+                            label = { Text(ip) },
+                            colors = AssistChipDefaults.assistChipColors(containerColor = Ui.surface2, labelColor = Ui.accent),
+                            border = null,
+                        )
+                    }
                 }
             }
+            GhostButton("Найти ТВ в сети", vm::findTv, Modifier.fillMaxWidth(), enabled = s.busy == null)
+            PrimaryButton("Подключиться", vm::connect, Modifier.fillMaxWidth(), enabled = s.busy == null)
         }
+        Spacer(Modifier.height(72.dp))
     }
 }

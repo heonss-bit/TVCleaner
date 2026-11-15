@@ -56,7 +56,7 @@ class TvOps(private val adb: AdbManager, private val catalog: Catalog) {
     private suspend fun readCacheSizes(): Map<String, Long> {
         val d = adb.shell("dumpsys diskstats").out
         fun list(label: String): List<String> =
-            Regex("(?m)^$label: \\[(.*?)]").find(d)?.groupValues?.get(1)
+            Regex("(?m)^$label: \\[(.*?)\\]").find(d)?.groupValues?.get(1)
                 ?.split(",")?.map { it.trim().trim('"') }.orEmpty()
         val names = list("Package Names")
         val caches = list("Cache Sizes")
@@ -163,7 +163,7 @@ class TvOps(private val adb: AdbManager, private val catalog: Catalog) {
 
     suspend fun defaultLauncher(): String? {
         val r = adb.shell("cmd shortcut get-default-launcher").out
-        Regex("\\{([^/}]+/[^}]+)}").find(r)?.groupValues?.get(1)?.let { return it }
+        Regex("\\{([^/\\}]+/[^\\}]+)\\}").find(r)?.groupValues?.get(1)?.let { return it }
         val r2 = adb.shell(
             "pm resolve-activity --brief -a android.intent.action.MAIN -c android.intent.category.HOME"
         ).out

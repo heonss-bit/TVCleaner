@@ -2,17 +2,9 @@ package app.tvcleaner.ui
 
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.Button
-import androidx.compose.material3.Card
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -24,7 +16,10 @@ import app.tvcleaner.UiState
 @Composable
 fun LauncherScreen(s: UiState, vm: MainViewModel, modifier: Modifier = Modifier) {
     if (!s.connected) {
-        Column(modifier.padding(16.dp)) { InfoCard("Нет подключения", "Сначала подключись к ТВ на первой вкладке.") }
+        Column(modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
+            Header("Лаунчер", "Свой главный экран для ТВ")
+            EmptyState("Нет подключения", "Сначала подключись к ТВ на вкладке «ТВ».")
+        }
         return
     }
     val pickApk = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
@@ -32,53 +27,54 @@ fun LauncherScreen(s: UiState, vm: MainViewModel, modifier: Modifier = Modifier)
     }
 
     Column(
-        modifier.verticalScroll(rememberScrollState()).padding(16.dp),
-        verticalArrangement = Arrangement.spacedBy(12.dp),
+        modifier.verticalScroll(rememberScrollState()).padding(horizontal = 16.dp, vertical = 12.dp),
+        verticalArrangement = Arrangement.spacedBy(14.dp),
     ) {
-        InfoCard(
-            "Свой лаунчер вместо тормозного",
-            "Родной главный экран часто самое тяжёлое на ТВ. Поставь лёгкий лаунчер (APK скачай заранее на телефон — например, " +
-                "open-source лаунчеры с GitHub), установи его на ТВ отсюда и сделай основным.",
+        Header(
+            "Лаунчер",
+            "Лёгкий главный экран вместо тормозного",
+            "Родной главный экран — часто самое тяжёлое на ТВ. Родной лаунчер не удаляется: " +
+                "кнопка «Вернуть прежний» всегда доступна. На некоторых ТВ кнопка «Домой» на пульте " +
+                "может всё равно открывать фирменный экран — это ограничение прошивки.",
         )
-        Button(
-            onClick = { pickApk.launch(arrayOf("application/vnd.android.package-archive", "application/octet-stream")) },
-            enabled = s.busy == null,
-            modifier = Modifier.fillMaxWidth(),
-        ) { Text("Установить APK лаунчера с телефона") }
+        AppCard {
+            Text("Как поставить", color = Ui.text, style = androidx.compose.material3.MaterialTheme.typography.titleSmall)
+            Spacer(Modifier.height(4.dp))
+            StepRow(1, "Скачай APK лёгкого лаунчера на телефон")
+            StepRow(2, "Нажми «Установить APK» и выбери файл")
+            StepRow(3, "Выбери лаунчер в списке и нажми «Сделать основным»")
+        }
+        PrimaryButton(
+            "Установить APK с телефона",
+            { pickApk.launch(arrayOf("application/vnd.android.package-archive", "application/octet-stream")) },
+            Modifier.fillMaxWidth(), enabled = s.busy == null,
+        )
 
         Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceBetween) {
-            Text("Лаунчеры на ТВ", style = MaterialTheme.typography.titleMedium)
-            OutlinedButton(onClick = vm::refreshLaunchers, enabled = s.busy == null) { Text("Обновить") }
+            Text("Лаунчеры на ТВ", color = Ui.text, style = androidx.compose.material3.MaterialTheme.typography.titleMedium)
+            GhostButton("Обновить", vm::refreshLaunchers, enabled = s.busy == null)
         }
-
         if (s.launchers.isEmpty()) {
-            Text("Список пуст. Нажми «Обновить».", style = MaterialTheme.typography.bodyMedium)
+            Text("Список пуст. Нажми «Обновить».", color = Ui.muted)
         }
         s.launchers.forEach { l ->
-            Card(Modifier.fillMaxWidth()) {
-                Row(Modifier.padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
-                    Column(Modifier.weight(1f)) {
-                        Text(l.pkg, style = MaterialTheme.typography.bodyLarge)
-                        if (l.isDefault) Text("сейчас основной", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.primary)
+            AppCard {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                        Text(l.pkg, color = Ui.text)
+                        if (l.isDefault) Tag("сейчас основной", Ui.accent)
                     }
                     if (!l.isDefault) {
-                        Button(onClick = { vm.setLauncher(l) }, enabled = s.busy == null) { Text("Сделать основным") }
+                        PrimaryButton("Сделать основным", { vm.setLauncher(l) }, enabled = s.busy == null)
                     }
                 }
             }
         }
 
         if (s.prevLauncher != null) {
-            OutlinedButton(onClick = vm::restorePrevLauncher, enabled = s.busy == null, modifier = Modifier.fillMaxWidth()) {
-                Text("Вернуть прежний лаунчер")
-            }
-            Text("Прежний: ${s.prevLauncher}", style = MaterialTheme.typography.bodySmall)
+            GhostButton("Вернуть прежний лаунчер", vm::restorePrevLauncher, Modifier.fillMaxWidth(), enabled = s.busy == null)
+            Text("Прежний: ${s.prevLauncher}", color = Ui.muted, style = androidx.compose.material3.MaterialTheme.typography.bodySmall)
         }
-
-        InfoCard(
-            "Важно",
-            "Родной лаунчер не удаляй и не отключай — его всегда можно вернуть кнопкой выше. " +
-                "На некоторых ТВ кнопка «Домой» на пульте всё равно может открывать фирменный экран — это ограничение производителя.",
-        )
+        Spacer(Modifier.height(72.dp))
     }
 }
