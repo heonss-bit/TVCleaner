@@ -1,4 +1,4 @@
-<img src="tvcleaner-icon.png" width="120">
+<img src="IMG_1580.png" width="120">
 
 # TV Cleaner (бета)
 
