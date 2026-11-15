@@ -1,3 +1,5 @@
+<img src="tvcleaner-icon.png" width="120">
+
 # TV Cleaner (бета)
 
 Приложение для Android-телефона: по Wi-Fi чистит Android TV. Без компьютера, без root.
