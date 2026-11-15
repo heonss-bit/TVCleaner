@@ -40,7 +40,7 @@ compose.desktop {
             targetFormats(TargetFormat.Exe)
             packageName = "TVCleaner"
             packageVersion = "1.0.0"
-            description = "Чистка Android TV: скан, бэкап, смена лаунчера"
+            description = "Android TV cleaner"
             vendor = "heonss-bit"
             modules("java.instrument", "java.management", "java.naming", "java.sql", "jdk.unsupported")
 
@@ -49,7 +49,7 @@ compose.desktop {
                 shortcut = true
                 dirChooser = true
                 perUserInstall = true
-                iconFile.set(project.file("icon.ico"))
+                if (!project.hasProperty("noIcon")) iconFile.set(project.file("icon.ico"))
             }
         }
     }
