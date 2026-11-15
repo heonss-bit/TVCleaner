@@ -1,4 +1,4 @@
-<img src="IMG_1580.png" width="120">
+<img src="https://raw.githubusercontent.com/heonss-bit/TVCleaner/main/IMG_1580.PNG" width="120">
 
 # TV Cleaner (бета)
 
